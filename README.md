@@ -2,7 +2,7 @@
 Answer: Who is this person in relation to me?
 
 ## 6Ps
-- Customer: Deo-Israni family member [user]
+- Customer: Chinmay Deo [user]
 - Problem:
   - [user] doesn't know who person [xyz] is when
     - [user] is about to meet or has run into [xyz] AND/OR
@@ -11,7 +11,7 @@ Answer: Who is this person in relation to me?
 - Value prop:
   - Your private social map of the family
 - Product:
-  - TBD
+  - See below for v0 product requirements document
 - Positioning:
   - Unlike a parent or relative, family-tree does not judge why you want to trace the path
   - Unlike a parent or relative, family-tree is available 24x7
@@ -27,7 +27,7 @@ Answer: Who is this person in relation to me?
 
 Build the lightest possible tool to answer exactly one question:
 
-> **“Who the f is this person (to me)?”**
+> **"How is this person related (to me)?”**
 
 No DAUs/MAUs ambitions. Single-admin, homegrown family tool.
 

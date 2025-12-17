@@ -1,6 +1,14 @@
 ## family-tree
 Answer: Who is this person in relation to me?
 
+## Versions
+
+| Version | Summary |
+|---------|---------|
+| v0.0.0  | Initial 1-D text path only: select a person and see the path as “You → … → X”. |
+| v0.1.0  | Adds a 2-D visual diagram (SVG) showing generations and relationship labels between nodes along the path. |
+
+
 ## 6Ps
 - Customer: Chinmay Deo [user]
 - Problem:
@@ -72,13 +80,13 @@ Details:
 2. **Answer area (below the question)**
 
    * Hidden by default; appears once X is selected and a path exists.
-   * Shows exactly one thing in v0:
+   * Shows exactly two things in v0:
+     * **Relationship path from me to X (1-D text)**  
+       Example: `You → Dad → Ramesh`
+     * **A 2-D mini diagram of the same path**  
+       Nodes are laid out by generation (parents above, children below, spouse/siblings on the same row), connected by lines labeled with the relationship type (parent/child/spouse/sibling).
 
-     * **Relationship path from me to X**
-       Example:
-       `You → Dad → Ramesh`
-
-No additional panels, no maps, no profile pages. Just this one question text, one selector, and a compact answer block.
+No additional panels, no maps, no profile pages. Just this one question text, one selector, and a compact text + visual answer block.
 
 ---
 
@@ -106,21 +114,6 @@ For v0, each person has:
 No nicknames, no "how to address" field, no extra attributes. These can be added later without breaking the core logic.
 
 ### Relationships
-
-Store an explicit **relationship table** covering parent/child, spouse, and sibling links.
-
-* Each relationship record: `{ from_id, to_id, type }`
-
-  * `type` ∈ `{"parent", "spouse", "sibling"}`
-* The relationship table is a flat list/array of such records.
-* For pathfinding, you treat all of these as edges in the graph.
-
-Notes:
-
-* `"parent"` is directional (from parent → child).
-* `"spouse"` and `"sibling"` are logically symmetric; in the graph, you can traverse both ways.
-
-This gives you a simple graph structure (built from all relationship types) where the main operation is: **find the shortest path between ****`me_id`**** and ****`target_id`****.**
 
 Store an explicit **relationship table** covering parent/child, spouse, and sibling links.
 
@@ -167,21 +160,18 @@ This means the effective graph used for search is **undirected**, even though `"
 
 ### 6.3 Display logic
 
-* **Relationship path**
+* **Relationship path (text)**  
+  Render the path as names joined by arrows.  
+  Example: `You → Dad → Ramesh`.
 
-  * Render the path as names joined by arrows.
-  * Example: `You → Dad → Ramesh`.
+* **2-D diagram**  
+  Render a compact visual slice of the same path:
+  * Horizontal axis: steps along the path.
+  * Vertical axis: generation relative to you (parents above, children below, same-generation on the same row).
+  * Nodes: rounded pills with names.
+  * Edges: lines between nodes, labeled with the relationship type (parent/child/spouse/sibling).
 
-No "how to address" logic in v0. The only output is the path from you to the selected person.
-
-* **How to address**
-
-  * Render directly from `how_i_address` for the `target_id` person.
-* **Relationship path**
-
-  * Render the path as names joined by arrows.
-  * Optionally append a short kin phrase derived from `how_i_address` at the end, e.g.:
-    `You → Dad → Ramesh (Dad’s elder brother)`
+No "how to address" logic in v0. The outputs are the text path and the 2-D visual for the path from you to the selected person.
 
 ### 6.4 What we explicitly do *not* do
 

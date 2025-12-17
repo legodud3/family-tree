@@ -3,10 +3,11 @@ Answer: Who is this person in relation to me?
 
 ## Versions
 
-| Version | Summary |
-|---------|---------|
-| v0.0.0  | Initial 1-D text path only: select a person and see the path as “You → … → X”. |
-| v0.1.0  | Adds a 2-D visual diagram (SVG) showing generations and relationship labels between nodes along the path. |
+| Version | Date           | Summary |
+|---------|----------------|---------|
+| v0.0.0  | 16 Dec 2025    | Initial 1-D text path only: select a person and see the path as “You → … → X”. |
+| v0.1.0  | 17 Dec 2025    | Adds a 2-D visual diagram (SVG) showing generations and relationship labels between nodes along the path. |
+| v0.1.1  | 17 Dec 2025    | Internal refactor: split into separate HTML/CSS/JS/data files and add basic unit tests for core graph logic. |
 
 
 ## 6Ps

@@ -25,7 +25,7 @@
       padding: 32px 28px 28px;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
-      max-width: 640px;
+      max-width: 720px;
       width: 100%;
     }
 
@@ -83,6 +83,64 @@
       color: #9ca3af;
       font-style: italic;
     }
+
+    .grid {
+      margin-top: 12px;
+      display: grid;
+      justify-content: center;
+      row-gap: 4px;
+      column-gap: 8px;
+    }
+
+    .grid-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      min-height: 24px;
+      font-size: 0.9rem;
+    }
+
+    .grid-node {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      white-space: nowrap;
+    }
+
+    .grid-edge-vertical,
+    .grid-edge-horizontal {
+      position: relative;
+      font-size: 0.7rem;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .grid-edge-vertical::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 2px;
+      bottom: 2px;
+      border-left: 1px solid #d1d5db;
+      transform: translateX(-50%);
+      z-index: -1;
+    }
+
+    .grid-edge-horizontal::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      top: 50%;
+      border-top: 1px solid #d1d5db;
+      transform: translateY(-50%);
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
@@ -97,6 +155,7 @@
     <div class="answer" id="answer">
       <div class="answer-label">Relationship path</div>
       <div class="answer-path muted">Pick someone to see how they connect to you.</div>
+      <div id="grid" class="grid"></div>
     </div>
   </div>
 
@@ -217,6 +276,143 @@
       return "";
     }
 
+    function getGenerationDelta(aId, bId) {
+      const rel = data.relationships.find(
+        r =>
+          (r.from_id === aId && r.to_id === bId) ||
+          (r.from_id === bId && r.to_id === aId)
+      );
+      if (!rel) return 0;
+      if (rel.type === "spouse" || rel.type === "sibling") return 0;
+      if (rel.type === "parent") {
+        // Directional: from_id is parent of to_id
+        if (rel.from_id === aId && rel.to_id === bId) {
+          // moving parent -> child: go down a generation
+          return -1;
+        }
+        if (rel.from_id === bId && rel.to_id === aId) {
+          // moving child -> parent: go up a generation
+          return 1;
+        }
+      }
+      return 0;
+    }
+
+    function renderGrid(pathIds) {
+      const grid = document.getElementById("grid");
+      if (!grid) return;
+
+      // Clear previous grid
+      grid.innerHTML = "";
+
+      if (!pathIds || pathIds.length === 0) {
+        return;
+      }
+
+      // Compute levels (generation) and column positions along the path.
+      // level: 0 for "You", +1 for parents, -1 for children, etc.
+      // col: stays the same for vertical moves (parent/child), moves right for same-generation moves.
+      const indexed = [];
+      let currentLevel = 0;
+      let currentCol = 1;
+      indexed.push({ id: pathIds[0], level: currentLevel, col: currentCol });
+
+      for (let i = 0; i < pathIds.length - 1; i++) {
+        const aId = pathIds[i];
+        const bId = pathIds[i + 1];
+        const delta = getGenerationDelta(aId, bId);
+        currentLevel += delta;
+
+        if (delta === 0) {
+          // spouse / sibling: same generation, move to the right
+          currentCol += 1;
+        } else {
+          // parent / child: stay in the same column, move up/down a generation
+          // (already handled by currentLevel)
+        }
+
+        indexed.push({ id: bId, level: currentLevel, col: currentCol });
+      }
+
+      // Determine min/max levels for row mapping
+      let minLevel = 0;
+      let maxLevel = 0;
+      for (const entry of indexed) {
+        if (entry.level < minLevel) minLevel = entry.level;
+        if (entry.level > maxLevel) maxLevel = entry.level;
+      }
+
+      const rowsCount = maxLevel - minLevel + 1;
+      const colsCount = Math.max(...indexed.map(e => e.col));
+
+      // Map logical level to grid row index (1-based), with highest level at the top
+      const levelToRow = new Map();
+      for (let level = minLevel; level <= maxLevel; level++) {
+        const rowIndex = maxLevel - level + 1;
+        levelToRow.set(level, rowIndex);
+      }
+
+      // Configure CSS grid template
+      grid.style.gridTemplateRows = `repeat(${rowsCount}, auto)`;
+      grid.style.gridTemplateColumns = `repeat(${colsCount}, minmax(0, auto))`;
+
+      // Build a lookup for positions by id
+      const posById = new Map();
+
+      // Add node elements
+      for (const entry of indexed) {
+        const row = levelToRow.get(entry.level);
+        const col = entry.col;
+        posById.set(entry.id, { row, col });
+
+        const person = getPersonById(entry.id);
+        const nodeEl = document.createElement("div");
+        nodeEl.className = "grid-node";
+        nodeEl.textContent =
+          entry.id === ME_ID
+            ? "You"
+            : (person ? person.name : `Unknown(${entry.id})`);
+        nodeEl.style.gridRow = String(row);
+        nodeEl.style.gridColumn = String(col);
+        grid.appendChild(nodeEl);
+      }
+
+      // Add edge elements with labels ("child of", "spouse of", etc.)
+      for (let i = 0; i < pathIds.length - 1; i++) {
+        const aId = pathIds[i];
+        const bId = pathIds[i + 1];
+        const posA = posById.get(aId);
+        const posB = posById.get(bId);
+        if (!posA || !posB) continue;
+
+        const label = getRelationshipLabel(aId, bId) || "";
+
+        if (posA.row === posB.row) {
+          // Horizontal edge (same generation)
+          const edgeEl = document.createElement("div");
+          edgeEl.className = "grid-edge-horizontal";
+          const minCol = Math.min(posA.col, posB.col);
+          const maxCol = Math.max(posA.col, posB.col);
+          edgeEl.style.gridRow = String(posA.row);
+          edgeEl.style.gridColumn = `${minCol} / ${maxCol + 1}`;
+          edgeEl.textContent = label;
+          grid.appendChild(edgeEl);
+        } else {
+          // Vertical edge (parent/child)
+          const edgeEl = document.createElement("div");
+          edgeEl.className = "grid-edge-vertical";
+          const minRow = Math.min(posA.row, posB.row);
+          const maxRow = Math.max(posA.row, posB.row);
+          // Use the child's column for the line, which is also the parent column by construction
+          const col = posB.col;
+          edgeEl.style.gridColumn = String(col);
+          edgeEl.style.gridRow = `${minRow} / ${maxRow + 1}`;
+          edgeEl.textContent = label;
+          grid.appendChild(edgeEl);
+        }
+      }
+    }
+
     function renderPath(pathIds) {
       const answerEl = document.getElementById("answer");
       const labelEl = answerEl.querySelector(".answer-label");
@@ -226,6 +422,7 @@
         labelEl.textContent = "Relationship path";
         pathEl.textContent = "No path found.";
         pathEl.classList.remove("muted");
+        renderGrid(null);
         return;
       }
 
@@ -234,6 +431,7 @@
       if (pathIds.length === 1) {
         pathEl.textContent = "You";
         pathEl.classList.remove("muted");
+        renderGrid(pathIds);
         return;
       }
 
@@ -257,6 +455,7 @@
 
       pathEl.textContent = result;
       pathEl.classList.remove("muted");
+      renderGrid(pathIds);
     }
 
     function onTargetChange(event) {

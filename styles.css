@@ -1,93 +1,164 @@
+:root {
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --fg-main: #0a0a0a;
+  --fg-muted: #737373;
+  --border: #e5e5e5;
+
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+  --blue: #3b82f6;
+  --purple: #a855f7;
+  --emerald: #10b981;
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-strong: 0 4px 6px rgba(0, 0, 0, 0.05), 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --bg-elevated: #171717;
+    --fg-main: #fafafa;
+    --fg-muted: #a3a3a3;
+    --border: #262626;
+
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-strong: 0 4px 6px rgba(0, 0, 0, 0.3), 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+}
+
 * {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 40px 40px 48px;
-  background: #f4f5f7;
-  color: #111827;
+  padding: 48px 24px;
+  background: var(--bg);
+  color: var(--fg-main);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .container {
-  background: #ffffff;
-  padding: 40px 56px 40px;
-  border-radius: 24px;
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.10);
+  background: var(--bg-elevated);
+  padding: 56px 64px;
+  border-radius: 32px;
+  box-shadow: var(--shadow-strong);
+  border: 1px solid var(--border);
   max-width: 1100px;
   width: 100%;
+  transition: all 0.3s ease;
 }
 
 .question-row {
-  font-size: 1.5rem;
-  line-height: 1.7;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 36px;
+  letter-spacing: -0.02em;
 }
 
 select {
-  font-size: 1rem;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  max-width: 320px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  padding: 12px 20px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--fg-main);
+  max-width: 400px;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23737373' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
+}
+
+select:hover {
+  border-color: var(--accent);
 }
 
 select:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 1px #4f46e5;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .answer {
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-  min-height: 32px;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  min-height: 48px;
 }
 
 .answer-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #6b7280;
-  margin-bottom: 4px;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  margin-bottom: 12px;
 }
 
 .answer-path {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 500;
-  color: #111827;
+  line-height: 1.6;
+  color: var(--fg-main);
   word-break: break-word;
 }
 
 .muted {
-  color: #9ca3af;
+  color: var(--fg-muted);
   font-style: italic;
+  font-weight: 400;
 }
 
 .grid {
-  margin-top: 32px;
+  margin-top: 48px;
   position: relative;
   width: 100%;
-  min-height: 180px;
+  min-height: 240px;
 }
 
 .grid-node {
   position: absolute;
-  padding: 8px 18px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  padding: 14px 28px;
+  border-radius: 16px;
+  border: 2px solid color-mix(in srgb, var(--accent) 80%, transparent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   white-space: nowrap;
-  font-size: 0.95rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  box-shadow: var(--shadow-strong);
+  transform: translate(-50%, -50%);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.grid-node:hover {
+  transform: translate(-50%, -50%) translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 32px 80px rgba(0, 0, 0, 0.2);
+}
+
+.grid-node[data-is-me="true"] {
+  background: linear-gradient(135deg, var(--blue) 0%, #2563eb 100%);
+  border-color: color-mix(in srgb, var(--blue) 80%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent), var(--shadow-strong);
 }
 
 .grid-svg {
@@ -100,36 +171,59 @@ select:focus {
   pointer-events: none;
 }
 
+.grid-svg line {
+  transition: all 0.3s ease;
+}
+
+.grid-svg text {
+  transition: all 0.3s ease;
+}
+
 @media (max-width: 768px) {
   body {
+    padding: 24px 16px;
     align-items: flex-start;
-    padding: 20px 12px 24px;
   }
 
   .container {
-    max-width: 100%;
-    padding: 28px 16px 24px;
-    border-radius: 0;
-    box-shadow: none;
+    padding: 32px 24px;
+    border-radius: 24px;
   }
 
   .question-row {
-    font-size: 1.25rem;
-    line-height: 1.5;
+    font-size: 1.75rem;
+    margin-bottom: 28px;
   }
 
   select {
     width: 100%;
     max-width: 100%;
-    margin-top: 8px;
+    font-size: 1rem;
+    margin-top: 12px;
+  }
+
+  .answer {
+    margin-top: 36px;
+    padding-top: 24px;
   }
 
   .answer-path {
     font-size: 1.05rem;
   }
 
+  .grid {
+    margin-top: 36px;
+    min-height: 200px;
+  }
+
   .grid-node {
     font-size: 0.9rem;
-    padding: 6px 10px;
+    padding: 10px 20px;
+  }
+}
+
+@media (hover: hover) {
+  select:hover {
+    transform: translateY(-1px);
   }
 }

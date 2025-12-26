@@ -310,6 +310,48 @@ function onTargetChange(event) {
   }
 }
 
+function getPreferredTheme() {
+  try {
+    const stored = window.localStorage.getItem("ft-theme");
+    if (stored === "light" || stored === "dark") return stored;
+  } catch (e) {
+    // ignore
+  }
+
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+  return "light";
+}
+
+function applyTheme(theme) {
+  const body = document.body;
+  body.classList.toggle("dark", theme === "dark");
+  try {
+    window.localStorage.setItem("ft-theme", theme);
+  } catch (e) {
+    // ignore
+  }
+  const toggle = document.getElementById("theme-toggle");
+  if (toggle) {
+    toggle.setAttribute("data-theme", theme);
+  }
+}
+
+function setupThemeToggle() {
+  const toggle = document.getElementById("theme-toggle");
+  const initial = getPreferredTheme();
+  applyTheme(initial);
+
+  if (!toggle) return;
+
+  toggle.addEventListener("click", () => {
+    const current = document.body.classList.contains("dark") ? "dark" : "light";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+  });
+}
+
 function init() {
   const select = document.getElementById("target-select");
 
@@ -325,4 +367,7 @@ function init() {
   select.addEventListener("change", onTargetChange);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+  setupThemeToggle();
+});

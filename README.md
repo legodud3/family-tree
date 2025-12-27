@@ -8,6 +8,29 @@ Answer: Who is this person in relation to me?
 | v0.0.0  | 16 Dec 2025    | Initial 1-D text path only: select a person and see the path as “You → … → X”. |
 | v0.1.0  | 17 Dec 2025    | Adds a 2-D visual diagram (SVG) showing generations and relationship labels between nodes along the path. |
 | v0.1.1  | 17 Dec 2025    | Internal refactor: split into separate HTML/CSS/JS/data files and add basic unit tests for core graph logic. |
+| v0.2.0  | 27 Dec 2025    | Visual design refresh: dark outer background, centered white card, gradient hero question with pill dropdown, and colored "brick" nodes with labelled connectors; remove 1-D text path from the UI. |
+
+## Current UI & design (as of v0.2.0)
+
+The current implementation is focused on a clean, single-question experience:
+
+- **Layout**
+  - Dark navy page background, with a centered, rounded white card as the primary surface.
+  - Top-left brand block ("Family Tree – Your private family connections").
+  - A single hero question inside the card: **"How is this person related to me?"**
+  - A large pill-shaped dropdown below the question for selecting the target person.
+
+- **Relationship visualization**
+  - The answer area shows only a **2-D visual path** between you and the selected person.
+  - Nodes are rendered as soft, pill-shaped "bricks":
+    - "You" is highlighted in one accent color.
+    - The selected target person is highlighted in a different accent color.
+    - Intermediate people use a third accent color.
+  - Nodes are connected by SVG lines labeled with the relationship on that segment (e.g., `spouse of`, `child of`).
+  - The old 1-D textual path (e.g., `You → Sanjita → Taruna`) is no longer shown in the UI to keep the answer area visually simple.
+
+- **Responsiveness**
+  - The layout is optimized for laptop/desktop use but remains usable on mobile: the card scales and the dropdown and visual path reflow cleanly on smaller screens.
 
 
 ## 6Ps
@@ -81,11 +104,10 @@ Details:
 2. **Answer area (below the question)**
 
    * Hidden by default; appears once X is selected and a path exists.
-   * Shows exactly two things in v0:
-     * **Relationship path from me to X (1-D text)**  
-       Example: `You → Dad → Ramesh`
-     * **A 2-D mini diagram of the same path**  
-       Nodes are laid out by generation (parents above, children below, spouse/siblings on the same row), connected by lines labeled with the relationship type (parent/child/spouse/sibling).
+   * Shows:
+     * **(Original v0 spec)** 1-D relationship path from me to X as text, e.g., `You → Dad → Ramesh`.
+     * **Current implementation (v0.2.0)** shows only the 2-D visual diagram of the path, to keep the answer area clean and focused.
+     * **2-D mini diagram of the path** – nodes laid out by generation (parents above, children below, spouse/siblings on the same row), connected by lines labeled with the relationship type (parent/child/spouse/sibling).
 
 No additional panels, no maps, no profile pages. Just this one question text, one selector, and a compact text + visual answer block.
 

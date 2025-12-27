@@ -1,6 +1,3 @@
-// Fixed "me" id for v0 (Chinmay)
-const ME_ID = 1;
-
 // v0 data: 7 people
 // 1: Chinmay Deo (me)
 // 2: Sanjita Israni (wife)

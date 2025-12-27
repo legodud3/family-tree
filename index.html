@@ -2,46 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Family Blocks</title>
+  <title>Family Tree</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <div class="container">
     <header class="app-header">
       <div class="brand">
-        <div class="brand-mark">🧱</div>
+        <div class="brand-icon">👨‍👩‍👧‍👦</div> <!-- or 🌳 or ❤️ -->
         <div class="brand-text">
-          <div class="brand-title">Family Blocks</div>
-          <div class="brand-subtitle">Your private family map</div>
+          <h1 class="brand-title">Family Tree</h1>
+          <p class="brand-subtitle">Your private family connections</p>
         </div>
       </div>
-      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode">
         <span class="theme-toggle-knob"></span>
       </button>
     </header>
 
-    <div class="lego-strip">
-      <div class="lego-brick lego-brick-red"></div>
-      <div class="lego-brick lego-brick-yellow"></div>
-      <div class="lego-brick lego-brick-blue"></div>
-      <div class="lego-brick lego-brick-green"></div>
-    </div>
-
-    <div class="container">
+    <main>
       <div class="question-row">
-        How is
-        <select id="target-select">
-          <option value="">select a person</option>
-        </select>
-        related to me?
+        <h1 class="question-heading">How is this person related to me?</h1>
+        <div class="question-control">
+          <select id="target-select">
+            <option value="">Select a person</option>
+          </select>
+        </div>
       </div>
+
       <div class="answer" id="answer">
         <div class="answer-label">Relationship path</div>
         <div class="answer-path muted">Pick someone to see how they connect to you.</div>
         <div id="grid" class="grid"></div>
       </div>
-    </div>
+    </main>
   </div>
 
   <script src="data.js"></script>

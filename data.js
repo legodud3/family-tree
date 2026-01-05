@@ -8,6 +8,10 @@
 // 7: Jigglypuff (child)
 
 const data = {
+  // CONFIG: Who is "Me"?
+  // Changing this ID shifts the perspective of the entire app.
+  ME_ID: 1,
+
   people: [
     { id: 1, name: "Chinmay Deo" },
     { id: 2, name: "Sanjita Israni" },

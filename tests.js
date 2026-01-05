@@ -64,5 +64,7 @@ function runAllTests() {
   console.groupEnd();
 }
 
-// Run tests immediately after scripts load.
-runAllTests();
+// Wait for the DOM (and thus data.js) to be fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+    runAllTests();
+});

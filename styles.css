@@ -175,6 +175,8 @@ select:focus {
   position: relative;
   width: 100%;
   min-height: 360px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .grid-node {

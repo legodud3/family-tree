@@ -1,5 +1,13 @@
-// Fixed "me" id for v0 (Chinmay) – only once!
-const ME_ID = 1;
+// Configuration for the visual layout
+const VISUAL_CONFIG = {
+  brickWidth: 200,
+  cellHeight: 160,
+  minGap: 80,
+  paddingY: 80
+};
+
+// NEW: Store the current path so we can re-draw it on resize
+let currentPathIds = null;
 
 // Make these visible to tests.js
 window.buildAdjacencyList = function(relationships) {
@@ -68,7 +76,7 @@ window.getGenerationDelta = function(aId, bId) {
   return 0;
 };
 
-// Normal functions (no window needed)
+// Normal functions
 function getPersonById(id) {
   return data.people.find(p => p.id === id) || null;
 }
@@ -76,7 +84,10 @@ function getPersonById(id) {
 function renderGrid(pathIds) {
   const grid = document.getElementById("grid");
   if (!grid) return;
+  
+  // NEW: Always clear the grid first
   grid.innerHTML = "";
+  
   if (!pathIds || pathIds.length === 0) return;
 
   const indexed = [];
@@ -104,21 +115,18 @@ function renderGrid(pathIds) {
     levelToRow.set(level, maxLevel - level);
   }
 
-  const CELL_Y = 160;
-  const PADDING_Y = 80;
   const containerWidth = grid.clientWidth || 900;
   const cols = Math.max(...indexed.map(e => e.col), 1);
-  const BRICK_WIDTH = 200;
-  const MIN_GAP = 80;
+  const { brickWidth, cellHeight, minGap, paddingY } = VISUAL_CONFIG;
 
   let spacing = 0;
   if (cols > 1) {
-    spacing = Math.max((containerWidth - BRICK_WIDTH) / (cols - 1), BRICK_WIDTH + MIN_GAP);
+    spacing = Math.max((containerWidth - brickWidth) / (cols - 1), brickWidth + minGap);
   }
 
   const totalSpan = spacing * (cols - 1);
   const startX = cols === 1 ? containerWidth / 2 : (containerWidth - totalSpan) / 2;
-  const height = (maxLevel - minLevel + 1) * CELL_Y + PADDING_Y * 2;
+  const height = (maxLevel - minLevel + 1) * cellHeight + paddingY * 2;
   grid.style.height = `${height}px`;
 
   const posById = new Map();
@@ -126,7 +134,7 @@ function renderGrid(pathIds) {
     const rowIndex = levelToRow.get(entry.level);
     const colIndex0 = entry.col - 1;
     const x = cols === 1 ? containerWidth / 2 : startX + colIndex0 * spacing;
-    const y = PADDING_Y + rowIndex * CELL_Y;
+    const y = paddingY + rowIndex * cellHeight;
     posById.set(entry.id, { x, y });
   });
 
@@ -173,20 +181,23 @@ function renderGrid(pathIds) {
     const person = getPersonById(entry.id);
     const nodeEl = document.createElement("div");
     nodeEl.className = "grid-node";
-    nodeEl.textContent = entry.id === ME_ID ? "You" : (person?.name || `Unknown(${entry.id})`);
-    if (entry.id === ME_ID) nodeEl.setAttribute("data-is-me", "true");
+    nodeEl.textContent = entry.id === data.ME_ID ? "You" : (person?.name || `Unknown(${entry.id})`);
+    if (entry.id === data.ME_ID) nodeEl.setAttribute("data-is-me", "true");
 
     nodeEl.style.left = `${pos.x}px`;
     nodeEl.style.top = `${pos.y}px`;
-    nodeEl.style.opacity = "0";
-    nodeEl.style.transition = "opacity 0.7s ease, transform 0.7s ease";
+    
+    // NEW: We remove the opacity animation here so resizing feels snappy, 
+    // or we keep it. Let's keep it simple for now.
+    nodeEl.style.opacity = "1"; 
     grid.appendChild(nodeEl);
-
-    setTimeout(() => nodeEl.style.opacity = "1", 60 * i);
   });
 }
 
 function renderPath(pathIds) {
+  // NEW: Save state
+  currentPathIds = pathIds;
+  
   const answerEl = document.getElementById("answer");
   const labelEl = answerEl.querySelector(".answer-label");
   const pathEl = answerEl.querySelector(".answer-path");
@@ -239,7 +250,7 @@ function onTargetChange(event) {
 
   const targetId = Number(value);
   const adj = buildAdjacencyList(data.relationships);
-  const path = bfsPath(ME_ID, targetId, adj);
+  const path = bfsPath(data.ME_ID, targetId, adj); // Using data.ME_ID now
 
   if (!path) renderPath(null);
   else renderPath(path);
@@ -277,7 +288,10 @@ function init() {
     return;
   }
 
-  const others = data.people.filter(p => p.id !== ME_ID);
+  // Clear existing options just in case
+  select.innerHTML = '<option value="">Select a person</option>';
+
+  const others = data.people.filter(p => p.id !== data.ME_ID);
   others.forEach(person => {
     const opt = document.createElement("option");
     opt.value = String(person.id);
@@ -286,6 +300,13 @@ function init() {
   });
 
   select.addEventListener("change", onTargetChange);
+
+  // NEW: Re-render on window resize
+  window.addEventListener("resize", () => {
+    if (currentPathIds) {
+      renderGrid(currentPathIds);
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -5,6 +5,8 @@
 A zero-maintenance, single-page app to answer the social anxiety question: *"Who is this person I'm about to meet?"*
 
 ## Quick Start
+Visit: https://legodud3.github.io/family-tree/
+Alt:
 1.  Clone the repo.
 2.  Open `index.html` in your browser.
 3.  Select a person from the dropdown to see how they connect to you.

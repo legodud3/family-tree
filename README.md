@@ -6,6 +6,7 @@ A zero-maintenance, single-page app to answer the social anxiety question: *"Who
 
 ## Quick Start
 Visit: https://legodud3.github.io/family-tree/
+
 Alt:
 1.  Clone the repo.
 2.  Open `index.html` in your browser.
@@ -16,9 +17,9 @@ Alt:
 * **Change "Me":** Update `data.ME_ID` in `data.js`.
 
 ## Documentation
-* [Product Requirements (PRD)](PRD.md) - Architecture & Data Model.
-* [Version History](CHANGELOG.md) - What changed in each release.
-* [Roadmap](ROADMAP.md) - Future plans.
+* [Product Requirements (PRD)](prd.md) - Architecture & Data Model.
+* [Version History](changelog.md) - What changed in each release.
+* [Roadmap](roadmap.md) - Future plans.
 
 ## License
 MIT

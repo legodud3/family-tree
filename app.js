@@ -6,11 +6,12 @@ const VISUAL_CONFIG = {
   paddingY: 80
 };
 
-// NEW: Store the current path so we can re-draw it on resize
+// Store the current path so we can re-draw it on resize
 let currentPathIds = null;
 
-// Make these visible to tests.js
-window.buildAdjacencyList = function(relationships) {
+// --- CORE LOGIC FUNCTIONS ---
+
+function buildAdjacencyList(relationships) {
   const adj = new Map();
   function addEdge(a, b) {
     if (!adj.has(a)) adj.set(a, []);
@@ -22,20 +23,23 @@ window.buildAdjacencyList = function(relationships) {
     addEdge(to_id, from_id);
   }
   return adj;
-};
+}
 
-window.bfsPath = function(startId, targetId, adj) {
+function bfsPath(startId, targetId, adj) {
   if (startId === targetId) return [startId];
   const queue = [startId];
   const visited = new Set([startId]);
   const parent = new Map();
+  
   while (queue.length > 0) {
     const current = queue.shift();
     const neighbours = adj.get(current) || [];
+    
     for (const next of neighbours) {
       if (!visited.has(next)) {
         visited.add(next);
         parent.set(next, current);
+        
         if (next === targetId) {
           const path = [targetId];
           let cur = targetId;
@@ -50,9 +54,12 @@ window.bfsPath = function(startId, targetId, adj) {
     }
   }
   return null;
-};
+}
 
-window.getRelationshipLabel = function(aId, bId) {
+function getRelationshipLabel(aId, bId) {
+  // Guard clause: ensure data exists (prevents crash in tests if mock is missing)
+  if (typeof data === 'undefined' || !data.relationships) return "";
+
   const rel = data.relationships.find(
     r => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
@@ -61,31 +68,37 @@ window.getRelationshipLabel = function(aId, bId) {
   if (rel.type === "sibling") return "sibling of";
   if (rel.type === "parent") return rel.from_id === aId ? "parent of" : "child of";
   return "";
-};
+}
 
-window.getGenerationDelta = function(aId, bId) {
+function getGenerationDelta(aId, bId) {
+  if (typeof data === 'undefined' || !data.relationships) return 0;
+
   const rel = data.relationships.find(
     r => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
   if (!rel) return 0;
   if (rel.type === "spouse" || rel.type === "sibling") return 0;
   if (rel.type === "parent") {
-    if (rel.from_id === aId && rel.to_id === bId) return -1;
-    if (rel.from_id === bId && rel.to_id === aId) return 1;
+    if (rel.from_id === aId && rel.to_id === bId) return -1; // Down
+    if (rel.from_id === bId && rel.to_id === aId) return 1;  // Up
   }
   return 0;
-};
+}
 
-// Normal functions
 function getPersonById(id) {
+  if (typeof data === 'undefined' || !data.people) return null;
   return data.people.find(p => p.id === id) || null;
 }
 
+// --- RENDER & UI FUNCTIONS ---
+
 function renderGrid(pathIds) {
+  // Guard: If document doesn't exist (Node environment), stop here
+  if (typeof document === 'undefined') return;
+
   const grid = document.getElementById("grid");
   if (!grid) return;
   
-  // NEW: Always clear the grid first
   grid.innerHTML = "";
   
   if (!pathIds || pathIds.length === 0) return;
@@ -186,18 +199,15 @@ function renderGrid(pathIds) {
 
     nodeEl.style.left = `${pos.x}px`;
     nodeEl.style.top = `${pos.y}px`;
-    
-    // NEW: We remove the opacity animation here so resizing feels snappy, 
-    // or we keep it. Let's keep it simple for now.
     nodeEl.style.opacity = "1"; 
     grid.appendChild(nodeEl);
   });
 }
 
 function renderPath(pathIds) {
-  // NEW: Save state
   currentPathIds = pathIds;
-  
+  if (typeof document === 'undefined') return;
+
   const answerEl = document.getElementById("answer");
   const labelEl = answerEl.querySelector(".answer-label");
   const pathEl = answerEl.querySelector(".answer-path");
@@ -250,13 +260,14 @@ function onTargetChange(event) {
 
   const targetId = Number(value);
   const adj = buildAdjacencyList(data.relationships);
-  const path = bfsPath(data.ME_ID, targetId, adj); // Using data.ME_ID now
+  const path = bfsPath(data.ME_ID, targetId, adj);
 
   if (!path) renderPath(null);
   else renderPath(path);
 }
 
 function getPreferredTheme() {
+  if (typeof window === 'undefined') return "light";
   try {
     const stored = window.localStorage.getItem("ft-theme");
     if (stored === "light" || stored === "dark") return stored;
@@ -265,12 +276,14 @@ function getPreferredTheme() {
 }
 
 function applyTheme(theme) {
+  if (typeof document === 'undefined') return;
   document.body.classList.toggle("dark", theme === "dark");
   try { window.localStorage.setItem("ft-theme", theme); } catch (e) {}
   document.getElementById("theme-toggle")?.setAttribute("data-theme", theme);
 }
 
 function setupThemeToggle() {
+  if (typeof document === 'undefined') return;
   const toggle = document.getElementById("theme-toggle");
   if (!toggle) return;
   const initial = getPreferredTheme();
@@ -282,13 +295,14 @@ function setupThemeToggle() {
 }
 
 function init() {
+  if (typeof document === 'undefined') return;
   const select = document.getElementById("target-select");
-  if (!select || !data?.people) {
-    console.warn("Dropdown or data not found – check data.js");
+  
+  if (!select || typeof data === 'undefined' || !data.people) {
+    // console.warn("Dropdown or data not found");
     return;
   }
 
-  // Clear existing options just in case
   select.innerHTML = '<option value="">Select a person</option>';
 
   const others = data.people.filter(p => p.id !== data.ME_ID);
@@ -301,7 +315,6 @@ function init() {
 
   select.addEventListener("change", onTargetChange);
 
-  // NEW: Re-render on window resize
   window.addEventListener("resize", () => {
     if (currentPathIds) {
       renderGrid(currentPathIds);
@@ -309,7 +322,30 @@ function init() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  init();
-  setupThemeToggle();
-});
+// Initialize only if in browser
+if (typeof document !== 'undefined') {
+  document.addEventListener("DOMContentLoaded", () => {
+    init();
+    setupThemeToggle();
+  });
+}
+
+// --- UNIVERSAL EXPORTS ---
+
+// 1. Export for Node.js (Jest)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    buildAdjacencyList,
+    bfsPath,
+    getRelationshipLabel,
+    getGenerationDelta
+  };
+}
+
+// 2. Export for Browser (attach to window)
+if (typeof window !== 'undefined') {
+  window.buildAdjacencyList = buildAdjacencyList;
+  window.bfsPath = bfsPath;
+  window.getRelationshipLabel = getRelationshipLabel;
+  window.getGenerationDelta = getGenerationDelta;
+}

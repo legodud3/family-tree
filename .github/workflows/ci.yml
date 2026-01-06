@@ -1,0 +1,30 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Linter (Hygiene Check)
+        run: npx eslint .
+
+      - name: Run Tests (Logic Check)
+        # We haven't written Jest tests yet, so this will fail if we run it now.
+        # Let's just echo for now until we do Step 2 of the feedback.
+        run: echo "Tests coming soon!"

@@ -1,10 +1,11 @@
 {
   "name": "family-tree",
-  "version": "1.0.0",
+  "version": "0.2.2",
   "description": "**Your private map of who everyone is.**",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",

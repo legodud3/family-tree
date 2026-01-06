@@ -1,0 +1,27 @@
+{
+  "name": "family-tree",
+  "version": "1.0.0",
+  "description": "**Your private map of who everyone is.**",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/legodud3/family-tree.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/legodud3/family-tree/issues"
+  },
+  "homepage": "https://github.com/legodud3/family-tree#readme",
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.2.0",
+    "prettier": "^3.7.4"
+  }
+}

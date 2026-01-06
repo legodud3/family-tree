@@ -3,7 +3,7 @@ const VISUAL_CONFIG = {
   brickWidth: 200,
   cellHeight: 160,
   minGap: 80,
-  paddingY: 80
+  paddingY: 80,
 };
 
 // Store the current path so we can re-draw it on resize
@@ -30,16 +30,16 @@ function bfsPath(startId, targetId, adj) {
   const queue = [startId];
   const visited = new Set([startId]);
   const parent = new Map();
-  
+
   while (queue.length > 0) {
     const current = queue.shift();
     const neighbours = adj.get(current) || [];
-    
+
     for (const next of neighbours) {
       if (!visited.has(next)) {
         visited.add(next);
         parent.set(next, current);
-        
+
         if (next === targetId) {
           const path = [targetId];
           let cur = targetId;
@@ -57,50 +57,48 @@ function bfsPath(startId, targetId, adj) {
 }
 
 function getRelationshipLabel(aId, bId) {
-  // Guard clause: ensure data exists (prevents crash in tests if mock is missing)
-  if (typeof data === 'undefined' || !data.relationships) return "";
+  if (typeof data === 'undefined' || !data.relationships) return '';
 
   const rel = data.relationships.find(
-    r => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
+    (r) => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
-  if (!rel) return "";
-  if (rel.type === "spouse") return "spouse of";
-  if (rel.type === "sibling") return "sibling of";
-  if (rel.type === "parent") return rel.from_id === aId ? "parent of" : "child of";
-  return "";
+  if (!rel) return '';
+  if (rel.type === 'spouse') return 'spouse of';
+  if (rel.type === 'sibling') return 'sibling of';
+  if (rel.type === 'parent') return rel.from_id === aId ? 'parent of' : 'child of';
+  return '';
 }
 
 function getGenerationDelta(aId, bId) {
   if (typeof data === 'undefined' || !data.relationships) return 0;
 
   const rel = data.relationships.find(
-    r => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
+    (r) => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
   if (!rel) return 0;
-  if (rel.type === "spouse" || rel.type === "sibling") return 0;
-  if (rel.type === "parent") {
-    if (rel.from_id === aId && rel.to_id === bId) return -1; // Down
-    if (rel.from_id === bId && rel.to_id === aId) return 1;  // Up
+  if (rel.type === 'spouse' || rel.type === 'sibling') return 0;
+  if (rel.type === 'parent') {
+    if (rel.from_id === aId && rel.to_id === bId) return -1;
+    if (rel.from_id === bId && rel.to_id === aId) return 1;
   }
   return 0;
 }
 
 function getPersonById(id) {
   if (typeof data === 'undefined' || !data.people) return null;
-  return data.people.find(p => p.id === id) || null;
+  return data.people.find((p) => p.id === id) || null;
 }
 
 // --- RENDER & UI FUNCTIONS ---
 
 function renderGrid(pathIds) {
-  // Guard: If document doesn't exist (Node environment), stop here
   if (typeof document === 'undefined') return;
 
-  const grid = document.getElementById("grid");
+  const grid = document.getElementById('grid');
   if (!grid) return;
-  
-  grid.innerHTML = "";
-  
+
+  grid.innerHTML = '';
+
   if (!pathIds || pathIds.length === 0) return;
 
   const indexed = [];
@@ -117,7 +115,8 @@ function renderGrid(pathIds) {
     indexed.push({ id: bId, level: currentLevel, col: currentCol });
   }
 
-  let minLevel = 0, maxLevel = 0;
+  let minLevel = 0;
+  let maxLevel = 0;
   for (const entry of indexed) {
     if (entry.level < minLevel) minLevel = entry.level;
     if (entry.level > maxLevel) maxLevel = entry.level;
@@ -129,7 +128,7 @@ function renderGrid(pathIds) {
   }
 
   const containerWidth = grid.clientWidth || 900;
-  const cols = Math.max(...indexed.map(e => e.col), 1);
+  const cols = Math.max(...indexed.map((e) => e.col), 1);
   const { brickWidth, cellHeight, minGap, paddingY } = VISUAL_CONFIG;
 
   let spacing = 0;
@@ -143,7 +142,7 @@ function renderGrid(pathIds) {
   grid.style.height = `${height}px`;
 
   const posById = new Map();
-  indexed.forEach(entry => {
+  indexed.forEach((entry) => {
     const rowIndex = levelToRow.get(entry.level);
     const colIndex0 = entry.col - 1;
     const x = cols === 1 ? containerWidth / 2 : startX + colIndex0 * spacing;
@@ -151,11 +150,11 @@ function renderGrid(pathIds) {
     posById.set(entry.id, { x, y });
   });
 
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("width", containerWidth);
-  svg.setAttribute("height", height);
-  svg.classList.add("grid-svg");
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('width', containerWidth);
+  svg.setAttribute('height', height);
+  svg.classList.add('grid-svg');
   grid.appendChild(svg);
 
   for (let i = 0; i < pathIds.length - 1; i++) {
@@ -165,41 +164,41 @@ function renderGrid(pathIds) {
     const posB = posById.get(bId);
     if (!posA || !posB) continue;
 
-    const label = getRelationshipLabel(aId, bId) || "";
+    const label = getRelationshipLabel(aId, bId) || '';
 
-    const line = document.createElementNS(svgNS, "line");
-    line.setAttribute("x1", posA.x);
-    line.setAttribute("y1", posA.y);
-    line.setAttribute("x2", posB.x);
-    line.setAttribute("y2", posB.y);
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', posA.x);
+    line.setAttribute('y1', posA.y);
+    line.setAttribute('x2', posB.x);
+    line.setAttribute('y2', posB.y);
     svg.appendChild(line);
 
     if (label) {
-      const text = document.createElementNS(svgNS, "text");
+      const text = document.createElementNS(svgNS, 'text');
       let mx = (posA.x + posB.x) / 2;
       let my = (posA.y + posB.y) / 2;
       if (Math.abs(posA.y - posB.y) < 4) my -= 14;
       else mx += 48;
-      text.setAttribute("x", mx);
-      text.setAttribute("y", my);
-      text.setAttribute("text-anchor", "middle");
+      text.setAttribute('x', mx);
+      text.setAttribute('y', my);
+      text.setAttribute('text-anchor', 'middle');
       text.textContent = label;
       svg.appendChild(text);
     }
   }
 
-  indexed.forEach((entry, i) => {
+  indexed.forEach((entry) => {
     const pos = posById.get(entry.id);
     if (!pos) return;
     const person = getPersonById(entry.id);
-    const nodeEl = document.createElement("div");
-    nodeEl.className = "grid-node";
-    nodeEl.textContent = entry.id === data.ME_ID ? "You" : (person?.name || `Unknown(${entry.id})`);
-    if (entry.id === data.ME_ID) nodeEl.setAttribute("data-is-me", "true");
+    const nodeEl = document.createElement('div');
+    nodeEl.className = 'grid-node';
+    nodeEl.textContent = entry.id === data.ME_ID ? 'You' : person?.name || `Unknown(${entry.id})`;
+    if (entry.id === data.ME_ID) nodeEl.setAttribute('data-is-me', 'true');
 
     nodeEl.style.left = `${pos.x}px`;
     nodeEl.style.top = `${pos.y}px`;
-    nodeEl.style.opacity = "1"; 
+    nodeEl.style.opacity = '1';
     grid.appendChild(nodeEl);
   });
 }
@@ -208,52 +207,52 @@ function renderPath(pathIds) {
   currentPathIds = pathIds;
   if (typeof document === 'undefined') return;
 
-  const answerEl = document.getElementById("answer");
-  const labelEl = answerEl.querySelector(".answer-label");
-  const pathEl = answerEl.querySelector(".answer-path");
+  const answerEl = document.getElementById('answer');
+  const labelEl = answerEl.querySelector('.answer-label');
+  const pathEl = answerEl.querySelector('.answer-path');
 
   if (!pathIds || pathIds.length === 0) {
-    labelEl.textContent = "Relationship path";
-    pathEl.textContent = "No path found.";
-    pathEl.classList.remove("muted");
+    labelEl.textContent = 'Relationship path';
+    pathEl.textContent = 'No path found.';
+    pathEl.classList.remove('muted');
     renderGrid(null);
     return;
   }
 
-  labelEl.textContent = "Relationship path";
+  labelEl.textContent = 'Relationship path';
 
   if (pathIds.length === 1) {
-    pathEl.textContent = "You";
-    pathEl.classList.remove("muted");
+    pathEl.textContent = 'You';
+    pathEl.classList.remove('muted');
     renderGrid(pathIds);
     return;
   }
 
-  let result = "";
+  let result = '';
   for (let i = 0; i < pathIds.length - 1; i++) {
     const aId = pathIds[i];
     const bId = pathIds[i + 1];
-    const aName = i === 0 ? "You" : (getPersonById(aId)?.name || `Unknown(${aId})`);
+    const aName = i === 0 ? 'You' : getPersonById(aId)?.name || `Unknown(${aId})`;
     const bName = getPersonById(bId)?.name || `Unknown(${bId})`;
-    const label = getRelationshipLabel(aId, bId) || "?";
-    if (i === 0) result += aName + " ";
+    const label = getRelationshipLabel(aId, bId) || '?';
+    if (i === 0) result += aName + ' ';
     result += `-(${label})-> ${bName}`;
-    if (i < pathIds.length - 2) result += " ";
+    if (i < pathIds.length - 2) result += ' ';
   }
 
   pathEl.textContent = result;
-  pathEl.classList.remove("muted");
+  pathEl.classList.remove('muted');
   renderGrid(pathIds);
 }
 
 function onTargetChange(event) {
   const value = event.target.value;
-  const answerEl = document.getElementById("answer");
-  const pathEl = answerEl.querySelector(".answer-path");
+  const answerEl = document.getElementById('answer');
+  const pathEl = answerEl.querySelector('.answer-path');
 
   if (!value) {
-    pathEl.textContent = "Choose a family member to see your connection 🧡";
-    pathEl.classList.add("muted");
+    pathEl.textContent = 'Choose a family member to see your connection 🧡';
+    pathEl.classList.add('muted');
     renderGrid(null);
     return;
   }
@@ -267,55 +266,56 @@ function onTargetChange(event) {
 }
 
 function getPreferredTheme() {
-  if (typeof window === 'undefined') return "light";
+  if (typeof window === 'undefined') return 'light';
   try {
-    const stored = window.localStorage.getItem("ft-theme");
-    if (stored === "light" || stored === "dark") return stored;
-  } catch (e) {}
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const stored = window.localStorage.getItem('ft-theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {}
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyTheme(theme) {
   if (typeof document === 'undefined') return;
-  document.body.classList.toggle("dark", theme === "dark");
-  try { window.localStorage.setItem("ft-theme", theme); } catch (e) {}
-  document.getElementById("theme-toggle")?.setAttribute("data-theme", theme);
+  document.body.classList.toggle('dark', theme === 'dark');
+  try {
+    window.localStorage.setItem('ft-theme', theme);
+  } catch {}
+  document.getElementById('theme-toggle')?.setAttribute('data-theme', theme);
 }
 
 function setupThemeToggle() {
   if (typeof document === 'undefined') return;
-  const toggle = document.getElementById("theme-toggle");
+  const toggle = document.getElementById('theme-toggle');
   if (!toggle) return;
   const initial = getPreferredTheme();
   applyTheme(initial);
-  toggle.addEventListener("click", () => {
-    const current = document.body.classList.contains("dark") ? "dark" : "light";
-    applyTheme(current === "dark" ? "light" : "dark");
+  toggle.addEventListener('click', () => {
+    const current = document.body.classList.contains('dark') ? 'dark' : 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
   });
 }
 
 function init() {
   if (typeof document === 'undefined') return;
-  const select = document.getElementById("target-select");
-  
+  const select = document.getElementById('target-select');
+
   if (!select || typeof data === 'undefined' || !data.people) {
-    // console.warn("Dropdown or data not found");
     return;
   }
 
   select.innerHTML = '<option value="">Select a person</option>';
 
-  const others = data.people.filter(p => p.id !== data.ME_ID);
-  others.forEach(person => {
-    const opt = document.createElement("option");
+  const others = data.people.filter((p) => p.id !== data.ME_ID);
+  others.forEach((person) => {
+    const opt = document.createElement('option');
     opt.value = String(person.id);
     opt.textContent = person.name;
     select.appendChild(opt);
   });
 
-  select.addEventListener("change", onTargetChange);
+  select.addEventListener('change', onTargetChange);
 
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     if (currentPathIds) {
       renderGrid(currentPathIds);
     }
@@ -324,7 +324,7 @@ function init() {
 
 // Initialize only if in browser
 if (typeof document !== 'undefined') {
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener('DOMContentLoaded', () => {
     init();
     setupThemeToggle();
   });
@@ -338,7 +338,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildAdjacencyList,
     bfsPath,
     getRelationshipLabel,
-    getGenerationDelta
+    getGenerationDelta,
   };
 }
 

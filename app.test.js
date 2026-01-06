@@ -1,29 +1,23 @@
-// app.test.js
-const { 
-  buildAdjacencyList, 
-  bfsPath, 
-  getRelationshipLabel, 
-  getGenerationDelta 
-} = require('./app');
+const { buildAdjacencyList, bfsPath, getRelationshipLabel } = require('./app');
 
 // Mock Data
 const mockPeople = [
-  { id: 1, name: "Dad" },
-  { id: 2, name: "Mom" },
-  { id: 3, name: "Kid" }
+  { id: 1, name: 'Dad' },
+  { id: 2, name: 'Mom' },
+  { id: 3, name: 'Kid' },
 ];
 
 const mockRelationships = [
   { from_id: 1, to_id: 3, type: 'parent' },
   { from_id: 2, to_id: 3, type: 'parent' },
-  { from_id: 1, to_id: 2, type: 'spouse' }
+  { from_id: 1, to_id: 2, type: 'spouse' },
 ];
 
 // Mock Global Data
 global.data = {
   ME_ID: 1,
   people: mockPeople,
-  relationships: mockRelationships
+  relationships: mockRelationships,
 };
 
 describe('Core Logic Tests', () => {
@@ -40,6 +34,6 @@ describe('Core Logic Tests', () => {
   });
 
   test('getRelationshipLabel works', () => {
-    expect(getRelationshipLabel(1, 3)).toBe("parent of");
+    expect(getRelationshipLabel(1, 3)).toBe('parent of');
   });
 });

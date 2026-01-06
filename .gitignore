@@ -7,7 +7,6 @@
 
 # Dependencies (if you add Node.js later)
 node_modules/
-package-lock.json
 
 # Debug logs
 *.log

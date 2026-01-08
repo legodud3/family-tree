@@ -25,6 +25,4 @@ jobs:
         run: npx eslint .
 
       - name: Run Tests (Logic Check)
-        # We haven't written Jest tests yet, so this will fail if we run it now.
-        # Let's just echo for now until we do Step 2 of the feedback.
-        run: echo "Tests coming soon!"
+        run: npm test

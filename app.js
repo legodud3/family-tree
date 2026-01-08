@@ -13,12 +13,32 @@ let currentPathIds = null;
 
 function buildAdjacencyList(relationships) {
   const adj = new Map();
+  
+  // Validate input
+  if (!Array.isArray(relationships)) {
+    console.warn('buildAdjacencyList: relationships must be an array');
+    return adj;
+  }
+  
   function addEdge(a, b) {
+    // Validate edge IDs
+    if (a == null || b == null || a === b) return;
     if (!adj.has(a)) adj.set(a, []);
     adj.get(a).push(b);
   }
+  
   for (const rel of relationships) {
+    // Validate relationship structure
+    if (!rel || typeof rel !== 'object') {
+      console.warn('buildAdjacencyList: skipping invalid relationship object', rel);
+      continue;
+    }
     const { from_id, to_id } = rel;
+    // Validate that from_id and to_id exist and are valid
+    if (from_id == null || to_id == null) {
+      console.warn('buildAdjacencyList: skipping relationship with missing IDs', rel);
+      continue;
+    }
     addEdge(from_id, to_id);
     addEdge(to_id, from_id);
   }
@@ -26,6 +46,16 @@ function buildAdjacencyList(relationships) {
 }
 
 function bfsPath(startId, targetId, adj) {
+  // Validate inputs
+  if (startId == null || targetId == null) {
+    console.warn('bfsPath: startId and targetId must be provided');
+    return null;
+  }
+  if (!(adj instanceof Map)) {
+    console.warn('bfsPath: adj must be a Map');
+    return null;
+  }
+  
   if (startId === targetId) return [startId];
   const queue = [startId];
   const visited = new Set([startId]);
@@ -57,12 +87,39 @@ function bfsPath(startId, targetId, adj) {
 }
 
 function getRelationshipLabel(aId, bId) {
-  if (typeof data === 'undefined' || !data.relationships) return '';
+  // Validate inputs
+  if (aId == null || bId == null) {
+    console.warn('getRelationshipLabel: both aId and bId must be provided');
+    return '';
+  }
+  
+  // Validate data structure
+  if (typeof data === 'undefined' || data === null) {
+    console.warn('getRelationshipLabel: data is undefined or null');
+    return '';
+  }
+  
+  if (!data.relationships) {
+    console.warn('getRelationshipLabel: data.relationships is missing');
+    return '';
+  }
+  
+  if (!Array.isArray(data.relationships)) {
+    console.warn('getRelationshipLabel: data.relationships must be an array');
+    return '';
+  }
 
   const rel = data.relationships.find(
-    (r) => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
+    (r) => r && (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
   if (!rel) return '';
+  
+  // Validate relationship structure
+  if (typeof rel !== 'object' || !rel.type) {
+    console.warn('getRelationshipLabel: invalid relationship structure', rel);
+    return '';
+  }
+  
   if (rel.type === 'spouse') return 'spouse of';
   if (rel.type === 'sibling') return 'sibling of';
   if (rel.type === 'parent') return rel.from_id === aId ? 'parent of' : 'child of';
@@ -70,12 +127,39 @@ function getRelationshipLabel(aId, bId) {
 }
 
 function getGenerationDelta(aId, bId) {
-  if (typeof data === 'undefined' || !data.relationships) return 0;
+  // Validate inputs
+  if (aId == null || bId == null) {
+    console.warn('getGenerationDelta: both aId and bId must be provided');
+    return 0;
+  }
+  
+  // Validate data structure
+  if (typeof data === 'undefined' || data === null) {
+    console.warn('getGenerationDelta: data is undefined or null');
+    return 0;
+  }
+  
+  if (!data.relationships) {
+    console.warn('getGenerationDelta: data.relationships is missing');
+    return 0;
+  }
+  
+  if (!Array.isArray(data.relationships)) {
+    console.warn('getGenerationDelta: data.relationships must be an array');
+    return 0;
+  }
 
   const rel = data.relationships.find(
-    (r) => (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
+    (r) => r && (r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId)
   );
   if (!rel) return 0;
+  
+  // Validate relationship structure
+  if (typeof rel !== 'object' || !rel.type) {
+    console.warn('getGenerationDelta: invalid relationship structure', rel);
+    return 0;
+  }
+  
   if (rel.type === 'spouse' || rel.type === 'sibling') return 0;
   if (rel.type === 'parent') {
     if (rel.from_id === aId && rel.to_id === bId) return -1;
@@ -85,8 +169,38 @@ function getGenerationDelta(aId, bId) {
 }
 
 function getPersonById(id) {
-  if (typeof data === 'undefined' || !data.people) return null;
-  return data.people.find((p) => p.id === id) || null;
+  // Validate input
+  if (id == null) {
+    console.warn('getPersonById: id must be provided');
+    return null;
+  }
+  
+  // Validate data structure
+  if (typeof data === 'undefined' || data === null) {
+    console.warn('getPersonById: data is undefined or null');
+    return null;
+  }
+  
+  if (!data.people) {
+    console.warn('getPersonById: data.people is missing');
+    return null;
+  }
+  
+  if (!Array.isArray(data.people)) {
+    console.warn('getPersonById: data.people must be an array');
+    return null;
+  }
+  
+  const person = data.people.find((p) => p && p.id === id);
+  if (!person) return null;
+  
+  // Validate person structure
+  if (typeof person !== 'object' || !person.hasOwnProperty('id')) {
+    console.warn('getPersonById: invalid person structure', person);
+    return null;
+  }
+  
+  return person;
 }
 
 // --- RENDER & UI FUNCTIONS ---
@@ -190,11 +304,21 @@ function renderGrid(pathIds) {
   indexed.forEach((entry) => {
     const pos = posById.get(entry.id);
     if (!pos) return;
+    
+    // Validate entry structure
+    if (!entry || entry.id == null) {
+      console.warn('renderGrid: skipping invalid entry', entry);
+      return;
+    }
+    
     const person = getPersonById(entry.id);
     const nodeEl = document.createElement('div');
     nodeEl.className = 'grid-node';
-    nodeEl.textContent = entry.id === data.ME_ID ? 'You' : person?.name || `Unknown(${entry.id})`;
-    if (entry.id === data.ME_ID) nodeEl.setAttribute('data-is-me', 'true');
+    
+    // Safely access ME_ID with fallback
+    const meId = (typeof data !== 'undefined' && data && data.ME_ID) ? data.ME_ID : null;
+    nodeEl.textContent = entry.id === meId ? 'You' : (person?.name || `Unknown(${entry.id})`);
+    if (entry.id === meId) nodeEl.setAttribute('data-is-me', 'true');
 
     nodeEl.style.left = `${pos.x}px`;
     nodeEl.style.top = `${pos.y}px`;
@@ -208,12 +332,32 @@ function renderPath(pathIds) {
   if (typeof document === 'undefined') return;
 
   const answerEl = document.getElementById('answer');
+  if (!answerEl) {
+    console.error('renderPath: answer element not found');
+    return;
+  }
+  
   const labelEl = answerEl.querySelector('.answer-label');
   const pathEl = answerEl.querySelector('.answer-path');
+  
+  if (!labelEl || !pathEl) {
+    console.error('renderPath: required child elements not found');
+    return;
+  }
 
   if (!pathIds || pathIds.length === 0) {
     labelEl.textContent = 'Relationship path';
     pathEl.textContent = 'No path found.';
+    pathEl.classList.remove('muted');
+    renderGrid(null);
+    return;
+  }
+
+  // Validate pathIds array
+  if (!Array.isArray(pathIds)) {
+    console.warn('renderPath: pathIds must be an array');
+    labelEl.textContent = 'Relationship path';
+    pathEl.textContent = 'Error: Invalid path data.';
     pathEl.classList.remove('muted');
     renderGrid(null);
     return;
@@ -232,23 +376,47 @@ function renderPath(pathIds) {
   for (let i = 0; i < pathIds.length - 1; i++) {
     const aId = pathIds[i];
     const bId = pathIds[i + 1];
-    const aName = i === 0 ? 'You' : getPersonById(aId)?.name || `Unknown(${aId})`;
-    const bName = getPersonById(bId)?.name || `Unknown(${bId})`;
+    
+    // Validate IDs in path
+    if (aId == null || bId == null) {
+      console.warn('renderPath: skipping invalid IDs in path', { aId, bId });
+      continue;
+    }
+    
+    const aPerson = getPersonById(aId);
+    const bPerson = getPersonById(bId);
+    const aName = i === 0 ? 'You' : (aPerson?.name || `Unknown(${aId})`);
+    const bName = bPerson?.name || `Unknown(${bId})`;
     const label = getRelationshipLabel(aId, bId) || '?';
     if (i === 0) result += aName + ' ';
     result += `-(${label})-> ${bName}`;
     if (i < pathIds.length - 2) result += ' ';
   }
 
-  pathEl.textContent = result;
+  pathEl.textContent = result || 'Error: Unable to render path.';
   pathEl.classList.remove('muted');
   renderGrid(pathIds);
 }
 
 function onTargetChange(event) {
+  if (!event || !event.target) {
+    console.error('onTargetChange: invalid event object');
+    return;
+  }
+  
   const value = event.target.value;
   const answerEl = document.getElementById('answer');
+  
+  if (!answerEl) {
+    console.error('onTargetChange: answer element not found');
+    return;
+  }
+  
   const pathEl = answerEl.querySelector('.answer-path');
+  if (!pathEl) {
+    console.error('onTargetChange: path element not found');
+    return;
+  }
 
   if (!value) {
     pathEl.textContent = 'Choose a family member to see your connection 🧡';
@@ -257,7 +425,40 @@ function onTargetChange(event) {
     return;
   }
 
+  // Validate data structure before use
+  if (typeof data === 'undefined' || data === null) {
+    pathEl.textContent = 'Error: Family data is not available. Please refresh the page.';
+    pathEl.classList.remove('muted');
+    renderGrid(null);
+    console.error('onTargetChange: data is undefined or null');
+    return;
+  }
+  
+  if (!data.relationships || !Array.isArray(data.relationships)) {
+    pathEl.textContent = 'Error: Relationship data is invalid. Please check your data file.';
+    pathEl.classList.remove('muted');
+    renderGrid(null);
+    console.error('onTargetChange: data.relationships is missing or invalid');
+    return;
+  }
+  
+  if (data.ME_ID == null) {
+    pathEl.textContent = 'Error: Your ID (ME_ID) is not set. Please check your data file.';
+    pathEl.classList.remove('muted');
+    renderGrid(null);
+    console.error('onTargetChange: data.ME_ID is missing');
+    return;
+  }
+
   const targetId = Number(value);
+  if (isNaN(targetId)) {
+    pathEl.textContent = 'Error: Invalid person selected.';
+    pathEl.classList.remove('muted');
+    renderGrid(null);
+    console.error('onTargetChange: invalid targetId', value);
+    return;
+  }
+  
   const adj = buildAdjacencyList(data.relationships);
   const path = bfsPath(data.ME_ID, targetId, adj);
 
@@ -299,17 +500,89 @@ function init() {
   if (typeof document === 'undefined') return;
   const select = document.getElementById('target-select');
 
-  if (!select || typeof data === 'undefined' || !data.people) {
+  if (!select) {
+    console.error('init: target-select element not found');
+    return;
+  }
+
+  // Validate data structure
+  if (typeof data === 'undefined' || data === null) {
+    console.error('init: data is undefined or null');
+    select.innerHTML = '<option value="">Error: Data not available</option>';
+    const answerEl = document.getElementById('answer');
+    if (answerEl) {
+      const pathEl = answerEl.querySelector('.answer-path');
+      if (pathEl) {
+        pathEl.textContent = 'Error: Family data is not available. Please check your data file.';
+        pathEl.classList.remove('muted');
+      }
+    }
+    return;
+  }
+
+  if (!data.people) {
+    console.error('init: data.people is missing');
+    select.innerHTML = '<option value="">Error: People data missing</option>';
+    const answerEl = document.getElementById('answer');
+    if (answerEl) {
+      const pathEl = answerEl.querySelector('.answer-path');
+      if (pathEl) {
+        pathEl.textContent = 'Error: People data is missing. Please check your data file.';
+        pathEl.classList.remove('muted');
+      }
+    }
+    return;
+  }
+
+  if (!Array.isArray(data.people)) {
+    console.error('init: data.people must be an array');
+    select.innerHTML = '<option value="">Error: Invalid data format</option>';
+    const answerEl = document.getElementById('answer');
+    if (answerEl) {
+      const pathEl = answerEl.querySelector('.answer-path');
+      if (pathEl) {
+        pathEl.textContent = 'Error: People data is in an invalid format. Please check your data file.';
+        pathEl.classList.remove('muted');
+      }
+    }
+    return;
+  }
+
+  if (data.ME_ID == null) {
+    console.error('init: data.ME_ID is missing');
+    select.innerHTML = '<option value="">Error: ME_ID not set</option>';
+    const answerEl = document.getElementById('answer');
+    if (answerEl) {
+      const pathEl = answerEl.querySelector('.answer-path');
+      if (pathEl) {
+        pathEl.textContent = 'Error: Your ID (ME_ID) is not set. Please check your data file.';
+        pathEl.classList.remove('muted');
+      }
+    }
     return;
   }
 
   select.innerHTML = '<option value="">Select a person</option>';
 
-  const others = data.people.filter((p) => p.id !== data.ME_ID);
+  // Filter and validate people
+  const others = data.people.filter((p) => {
+    if (!p || typeof p !== 'object' || p.id == null) {
+      console.warn('init: skipping invalid person object', p);
+      return false;
+    }
+    return p.id !== data.ME_ID;
+  });
+  
+  if (others.length === 0) {
+    select.innerHTML = '<option value="">No other family members found</option>';
+    console.warn('init: no other people found after filtering');
+    return;
+  }
+  
   others.forEach((person) => {
     const opt = document.createElement('option');
     opt.value = String(person.id);
-    opt.textContent = person.name;
+    opt.textContent = person.name || `Person ${person.id}`;
     select.appendChild(opt);
   });
 

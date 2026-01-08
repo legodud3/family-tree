@@ -13,14 +13,7 @@ const mockRelationships = [
   { from_id: 1, to_id: 2, type: 'spouse' },
 ];
 
-// Mock Data - Extended Family (for complex tests)
-const extendedPeople = [
-  { id: 10, name: 'Grandpa' },
-  { id: 11, name: 'Grandma' },
-  { id: 12, name: 'Uncle' },
-  { id: 13, name: 'Aunt' },
-  { id: 14, name: 'Cousin' },
-];
+// (extended mock people removed - not used in tests)
 
 const extendedRelationships = [
   { from_id: 10, to_id: 1, type: 'parent' },

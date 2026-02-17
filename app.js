@@ -8,6 +8,54 @@ const VISUAL_CONFIG = {
 
 // Store the current path so we can re-draw it on resize
 let currentPathIds = null;
+let normalizedData = null;
+
+function getActiveData() {
+  if (normalizedData) return normalizedData;
+  if (typeof data === 'undefined' || data == null) return null;
+  return normalizeData(data);
+}
+
+function normalizeData(rawData) {
+  if (!rawData || typeof rawData !== 'object') {
+    return { ME_ID: null, people: [], relationships: [] };
+  }
+
+  const people = Array.isArray(rawData.people)
+    ? rawData.people
+        .filter((person) => person && typeof person === 'object' && person.id != null)
+        .map((person) => ({
+          id: Number(person.id),
+          name: person.name || person.display_name || `Person ${person.id}`,
+          display_name: person.display_name || person.name || `Person ${person.id}`,
+          nickname: person.nickname || '',
+          pronouns: person.pronouns || '',
+          birth_year: person.birth_year ?? null,
+          notes: person.notes || '',
+          tags: Array.isArray(person.tags) ? person.tags : [],
+        }))
+    : [];
+
+  const relationships = Array.isArray(rawData.relationships)
+    ? rawData.relationships
+        .filter((rel) => rel && rel.from_id != null && rel.to_id != null && rel.type)
+        .map((rel) => ({
+          from_id: Number(rel.from_id),
+          to_id: Number(rel.to_id),
+          type: rel.type,
+          subtype: rel.subtype || 'unspecified',
+          since: rel.since || null,
+          confidence: rel.confidence || 'confirmed',
+          notes: rel.notes || '',
+        }))
+    : [];
+
+  return {
+    ME_ID: rawData.ME_ID == null ? null : Number(rawData.ME_ID),
+    people,
+    relationships,
+  };
+}
 
 // --- CORE LOGIC FUNCTIONS ---
 
@@ -86,7 +134,7 @@ function bfsPath(startId, targetId, adj) {
   return null;
 }
 
-function getRelationshipLabel(aId, bId) {
+function getRelationshipLabel(aId, bId, dataset = getActiveData()) {
   // Validate inputs
   if (aId == null || bId == null) {
     console.warn('getRelationshipLabel: both aId and bId must be provided');
@@ -94,22 +142,22 @@ function getRelationshipLabel(aId, bId) {
   }
 
   // Validate data structure
-  if (typeof data === 'undefined' || data === null) {
+  if (dataset === null) {
     console.warn('getRelationshipLabel: data is undefined or null');
     return '';
   }
 
-  if (!data.relationships) {
+  if (!dataset.relationships) {
     console.warn('getRelationshipLabel: data.relationships is missing');
     return '';
   }
 
-  if (!Array.isArray(data.relationships)) {
+  if (!Array.isArray(dataset.relationships)) {
     console.warn('getRelationshipLabel: data.relationships must be an array');
     return '';
   }
 
-  const rel = data.relationships.find(
+  const rel = dataset.relationships.find(
     (r) => r && ((r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId))
   );
 
@@ -127,7 +175,7 @@ function getRelationshipLabel(aId, bId) {
   return '';
 }
 
-function getGenerationDelta(aId, bId) {
+function getGenerationDelta(aId, bId, dataset = getActiveData()) {
   // Validate inputs
   if (aId == null || bId == null) {
     console.warn('getGenerationDelta: both aId and bId must be provided');
@@ -135,22 +183,22 @@ function getGenerationDelta(aId, bId) {
   }
 
   // Validate data structure
-  if (typeof data === 'undefined' || data === null) {
+  if (dataset === null) {
     console.warn('getGenerationDelta: data is undefined or null');
     return 0;
   }
 
-  if (!data.relationships) {
+  if (!dataset.relationships) {
     console.warn('getGenerationDelta: data.relationships is missing');
     return 0;
   }
 
-  if (!Array.isArray(data.relationships)) {
+  if (!Array.isArray(dataset.relationships)) {
     console.warn('getGenerationDelta: data.relationships must be an array');
     return 0;
   }
 
-  const rel = data.relationships.find(
+  const rel = dataset.relationships.find(
     (r) => r && ((r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId))
   );
 
@@ -170,7 +218,52 @@ function getGenerationDelta(aId, bId) {
   return 0;
 }
 
-function getPersonById(id) {
+function getStepToken(aId, bId, dataset = getActiveData()) {
+  const rel = dataset?.relationships?.find(
+    (r) => r && ((r.from_id === aId && r.to_id === bId) || (r.from_id === bId && r.to_id === aId))
+  );
+  if (!rel) return 'relative';
+  if (rel.type === 'parent') return rel.from_id === aId ? 'parent' : 'child';
+  if (rel.type === 'spouse') return 'spouse';
+  if (rel.type === 'sibling') return 'sibling';
+  return 'relative';
+}
+
+function resolveKinship(pathIds, dataset = getActiveData()) {
+  if (!Array.isArray(pathIds) || pathIds.length === 0) return 'No connection found';
+  if (pathIds.length === 1) return 'This is you';
+
+  const steps = [];
+  for (let i = 0; i < pathIds.length - 1; i += 1) {
+    steps.push(getStepToken(pathIds[i], pathIds[i + 1], dataset));
+  }
+
+  const fingerprint = steps.join('>');
+  const aliases = {
+    parent: 'parent',
+    child: 'child',
+    spouse: 'spouse',
+    sibling: 'sibling',
+    'parent>parent': 'grandparent',
+    'child>child': 'grandchild',
+    'parent>sibling': 'aunt/uncle',
+    'child>sibling': 'aunt/uncle',
+    'sibling>child': 'niece/nephew',
+    'sibling>parent': 'niece/nephew',
+    'spouse>parent': 'parent-in-law',
+    'spouse>sibling': 'sibling-in-law',
+  };
+
+  if (aliases[fingerprint]) return aliases[fingerprint];
+
+  const up = steps.filter((s) => s === 'parent').length;
+  const down = steps.filter((s) => s === 'child').length;
+  if (up >= 3 && down === 0) return `${'great-'.repeat(up - 2)}grandparent`;
+  if (down >= 3 && up === 0) return `${'great-'.repeat(down - 2)}grandchild`;
+
+  return `relative (${steps.length} hops away)`;
+}
+function getPersonById(id, dataset = getActiveData()) {
   // Validate input
   if (id == null) {
     console.warn('getPersonById: id must be provided');
@@ -178,22 +271,22 @@ function getPersonById(id) {
   }
 
   // Validate data structure
-  if (typeof data === 'undefined' || data === null) {
+  if (dataset === null) {
     console.warn('getPersonById: data is undefined or null');
     return null;
   }
 
-  if (!data.people) {
+  if (!dataset.people) {
     console.warn('getPersonById: data.people is missing');
     return null;
   }
 
-  if (!Array.isArray(data.people)) {
+  if (!Array.isArray(dataset.people)) {
     console.warn('getPersonById: data.people must be an array');
     return null;
   }
 
-  const person = data.people.find((p) => p && p.id === id);
+  const person = dataset.people.find((p) => p && p.id === id);
   if (!person) return null;
 
   // Validate person structure
@@ -225,7 +318,7 @@ function renderGrid(pathIds) {
   for (let i = 0; i < pathIds.length - 1; i++) {
     const aId = pathIds[i];
     const bId = pathIds[i + 1];
-    const delta = getGenerationDelta(aId, bId);
+    const delta = getGenerationDelta(aId, bId, normalizedData);
     currentLevel += delta;
     if (delta === 0) currentCol += 1;
     indexed.push({ id: bId, level: currentLevel, col: currentCol });
@@ -280,7 +373,7 @@ function renderGrid(pathIds) {
     const posB = posById.get(bId);
     if (!posA || !posB) continue;
 
-    const label = getRelationshipLabel(aId, bId) || '';
+    const label = getRelationshipLabel(aId, bId, normalizedData) || '';
 
     const line = document.createElementNS(svgNS, 'line');
     line.setAttribute('x1', posA.x);
@@ -313,12 +406,12 @@ function renderGrid(pathIds) {
       return;
     }
 
-    const person = getPersonById(entry.id);
+    const person = getPersonById(entry.id, normalizedData);
     const nodeEl = document.createElement('div');
     nodeEl.className = 'grid-node';
 
     // Safely access ME_ID with fallback
-    const meId = typeof data !== 'undefined' && data && data.ME_ID ? data.ME_ID : null;
+    const meId = normalizedData?.ME_ID ?? null;
     nodeEl.textContent = entry.id === meId ? 'You' : person?.name || `Unknown(${entry.id})`;
     if (entry.id === meId) nodeEl.setAttribute('data-is-me', 'true');
 
@@ -341,56 +434,60 @@ function renderPath(pathIds) {
 
   const labelEl = answerEl.querySelector('.answer-label');
   const pathEl = answerEl.querySelector('.answer-path');
+  const summaryEl = answerEl.querySelector('.answer-summary');
 
-  if (!labelEl || !pathEl) {
+  if (!labelEl || !pathEl || !summaryEl) {
     console.error('renderPath: required child elements not found');
     return;
   }
 
   if (!pathIds || pathIds.length === 0) {
-    labelEl.textContent = 'Relationship path';
-    pathEl.textContent = 'No path found.';
+    labelEl.textContent = 'Relationship';
+    summaryEl.textContent = 'No path found.';
+    pathEl.textContent = '';
     pathEl.classList.remove('muted');
     renderGrid(null);
     return;
   }
 
-  // Validate pathIds array
   if (!Array.isArray(pathIds)) {
     console.warn('renderPath: pathIds must be an array');
-    labelEl.textContent = 'Relationship path';
-    pathEl.textContent = 'Error: Invalid path data.';
+    labelEl.textContent = 'Relationship';
+    summaryEl.textContent = 'Error: Invalid path data.';
+    pathEl.textContent = '';
     pathEl.classList.remove('muted');
     renderGrid(null);
     return;
   }
 
-  labelEl.textContent = 'Relationship path';
+  labelEl.textContent = 'Relationship';
 
   if (pathIds.length === 1) {
-    pathEl.textContent = 'You';
+    summaryEl.textContent = 'You';
+    pathEl.textContent = '';
     pathEl.classList.remove('muted');
     renderGrid(pathIds);
     return;
   }
 
+  const dataset = getActiveData();
+  const targetPerson = getPersonById(pathIds[pathIds.length - 1], dataset);
+  const targetName = targetPerson?.display_name || targetPerson?.name || 'This person';
+  const kinship = resolveKinship(pathIds, dataset);
+  summaryEl.textContent = `${targetName} is your ${kinship}.`;
+
   let result = '';
   for (let i = 0; i < pathIds.length - 1; i++) {
     const aId = pathIds[i];
     const bId = pathIds[i + 1];
+    if (aId == null || bId == null) continue;
 
-    // Validate IDs in path
-    if (aId == null || bId == null) {
-      console.warn('renderPath: skipping invalid IDs in path', { aId, bId });
-      continue;
-    }
-
-    const aPerson = getPersonById(aId);
-    const bPerson = getPersonById(bId);
-    const aName = i === 0 ? 'You' : aPerson?.name || `Unknown(${aId})`;
-    const bName = bPerson?.name || `Unknown(${bId})`;
-    const label = getRelationshipLabel(aId, bId) || '?';
-    if (i === 0) result += aName + ' ';
+    const aPerson = getPersonById(aId, dataset);
+    const bPerson = getPersonById(bId, dataset);
+    const aName = i === 0 ? 'You' : aPerson?.display_name || aPerson?.name || `Unknown(${aId})`;
+    const bName = bPerson?.display_name || bPerson?.name || `Unknown(${bId})`;
+    const label = getRelationshipLabel(aId, bId, dataset) || '?';
+    if (i === 0) result += `${aName} `;
     result += `-(${label})-> ${bName}`;
     if (i < pathIds.length - 2) result += ' ';
   }
@@ -427,28 +524,25 @@ function onTargetChange(event) {
     return;
   }
 
-  // Validate data structure before use
-  if (typeof data === 'undefined' || data === null) {
+  const dataset = getActiveData();
+  if (!dataset) {
     pathEl.textContent = 'Error: Family data is not available. Please refresh the page.';
     pathEl.classList.remove('muted');
     renderGrid(null);
-    console.error('onTargetChange: data is undefined or null');
     return;
   }
 
-  if (!data.relationships || !Array.isArray(data.relationships)) {
+  if (!Array.isArray(dataset.relationships) || dataset.relationships.length === 0) {
     pathEl.textContent = 'Error: Relationship data is invalid. Please check your data file.';
     pathEl.classList.remove('muted');
     renderGrid(null);
-    console.error('onTargetChange: data.relationships is missing or invalid');
     return;
   }
 
-  if (data.ME_ID == null) {
+  if (dataset.ME_ID == null) {
     pathEl.textContent = 'Error: Your ID (ME_ID) is not set. Please check your data file.';
     pathEl.classList.remove('muted');
     renderGrid(null);
-    console.error('onTargetChange: data.ME_ID is missing');
     return;
   }
 
@@ -461,8 +555,8 @@ function onTargetChange(event) {
     return;
   }
 
-  const adj = buildAdjacencyList(data.relationships);
-  const path = bfsPath(data.ME_ID, targetId, adj);
+  const adj = buildAdjacencyList(dataset.relationships);
+  const path = bfsPath(dataset.ME_ID, targetId, adj);
 
   if (!path) renderPath(null);
   else renderPath(path);
@@ -483,7 +577,9 @@ function applyTheme(theme) {
   try {
     window.localStorage.setItem('ft-theme', theme);
   } catch {}
-  document.getElementById('theme-toggle')?.setAttribute('data-theme', theme);
+  const toggle = document.getElementById('theme-toggle');
+  toggle?.setAttribute('data-theme', theme);
+  toggle?.setAttribute('aria-pressed', String(theme === 'dark'));
 }
 
 function setupThemeToggle() {
@@ -500,6 +596,7 @@ function setupThemeToggle() {
 
 function init() {
   if (typeof document === 'undefined') return;
+  normalizedData = getActiveData();
   const select = document.getElementById('target-select');
 
   if (!select) {
@@ -507,94 +604,42 @@ function init() {
     return;
   }
 
-  // Validate data structure
-  if (typeof data === 'undefined' || data === null) {
-    console.error('init: data is undefined or null');
+  if (!normalizedData) {
     select.innerHTML = '<option value="">Error: Data not available</option>';
-    const answerEl = document.getElementById('answer');
-    if (answerEl) {
-      const pathEl = answerEl.querySelector('.answer-path');
-      if (pathEl) {
-        pathEl.textContent = 'Error: Family data is not available. Please check your data file.';
-        pathEl.classList.remove('muted');
-      }
-    }
     return;
   }
 
-  if (!data.people) {
-    console.error('init: data.people is missing');
+  if (!Array.isArray(normalizedData.people) || normalizedData.people.length === 0) {
     select.innerHTML = '<option value="">Error: People data missing</option>';
-    const answerEl = document.getElementById('answer');
-    if (answerEl) {
-      const pathEl = answerEl.querySelector('.answer-path');
-      if (pathEl) {
-        pathEl.textContent = 'Error: People data is missing. Please check your data file.';
-        pathEl.classList.remove('muted');
-      }
-    }
     return;
   }
 
-  if (!Array.isArray(data.people)) {
-    console.error('init: data.people must be an array');
-    select.innerHTML = '<option value="">Error: Invalid data format</option>';
-    const answerEl = document.getElementById('answer');
-    if (answerEl) {
-      const pathEl = answerEl.querySelector('.answer-path');
-      if (pathEl) {
-        pathEl.textContent =
-          'Error: People data is in an invalid format. Please check your data file.';
-        pathEl.classList.remove('muted');
-      }
-    }
-    return;
-  }
-
-  if (data.ME_ID == null) {
-    console.error('init: data.ME_ID is missing');
+  if (normalizedData.ME_ID == null) {
     select.innerHTML = '<option value="">Error: ME_ID not set</option>';
-    const answerEl = document.getElementById('answer');
-    if (answerEl) {
-      const pathEl = answerEl.querySelector('.answer-path');
-      if (pathEl) {
-        pathEl.textContent = 'Error: Your ID (ME_ID) is not set. Please check your data file.';
-        pathEl.classList.remove('muted');
-      }
-    }
     return;
   }
 
   select.innerHTML = '<option value="">Select a person</option>';
 
-  // Filter and validate people
-  const others = data.people.filter((p) => {
-    if (!p || typeof p !== 'object' || p.id == null) {
-      console.warn('init: skipping invalid person object', p);
-      return false;
-    }
-    return p.id !== data.ME_ID;
-  });
+  const others = normalizedData.people.filter(
+    (person) => person && person.id != null && person.id !== normalizedData.ME_ID
+  );
 
   if (others.length === 0) {
     select.innerHTML = '<option value="">No other family members found</option>';
-    console.warn('init: no other people found after filtering');
     return;
   }
 
   others.forEach((person) => {
     const opt = document.createElement('option');
     opt.value = String(person.id);
-    opt.textContent = person.name || `Person ${person.id}`;
+    opt.textContent = person.display_name || person.name || `Person ${person.id}`;
     select.appendChild(opt);
   });
 
   select.addEventListener('change', onTargetChange);
-
   window.addEventListener('resize', () => {
-    if (currentPathIds) {
-      renderGrid(currentPathIds);
-    }
+    if (currentPathIds) renderGrid(currentPathIds);
   });
 }
 
@@ -615,6 +660,8 @@ if (typeof module !== 'undefined' && module.exports) {
     bfsPath,
     getRelationshipLabel,
     getGenerationDelta,
+    normalizeData,
+    resolveKinship,
   };
 }
 

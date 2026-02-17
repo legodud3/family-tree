@@ -1,27 +1,43 @@
-# Product Requirements Document (v0)
+# Product Requirements Document (v0.3)
 
-## 1. Goal
+## Product Vision
 
-Build the lightest possible tool to answer exactly one question:
+Create a beautiful private family graph that helps a parent preserve and explain kinship to a child over time.
 
-> **"How is this person related (to me)?"**
+## Primary User Stories
 
-## 2. Architecture
+1. As a parent, I can pick any person and instantly understand their relationship to me.
+2. As a family curator, I can store richer context (nicknames, notes, confidence, subtype).
+3. As a mobile user, I can read results quickly with visual clarity.
 
-- **Stack:** Plain HTML/CSS/JS. No framework, no build step.
-- **Data:** Hardcoded JSON object in `data.js`.
-- **Hosting:** Static (GitHub Pages).
+## Core Capabilities
 
-## 3. Data Model
+- Graph traversal via BFS shortest path
+- Kinship resolver that maps path patterns to human-friendly labels
+- Visual path rendering across generations
+- Light/dark theme toggle
 
-- **Nodes:** People (`id`, `name`).
-- **Edges:** Relationships (`from_id`, `to_id`, `type`).
-  - Types: `parent`, `spouse`, `sibling`.
-  - Graph is treated as undirected for traversal.
+## Data Model
 
-## 4. Algorithms
+### Person
 
-- **Pathfinding:** Standard BFS (Breadth-First Search) to find the shortest path of IDs.
-- **Visualization:**
-  - Calculates "Generation Delta" (Parent = +1, Child = -1, Spouse = 0).
-  - Renders a Grid (Generations on Y-axis, Steps on X-axis).
+- `id` (required)
+- `name` (required)
+- `display_name`, `nickname`, `pronouns`, `birth_year`, `notes`, `tags` (optional)
+
+### Relationship
+
+- `from_id`, `to_id`, `type` (required)
+- `subtype`, `since`, `confidence`, `notes` (optional)
+
+## Non-Goals (for now)
+
+- No login/auth
+- No backend database
+- No collaborative editing
+
+## Success Criteria
+
+- New family member can be added in <2 minutes
+- Kinship answer appears instantly (<100ms local)
+- App is understandable to non-technical family members

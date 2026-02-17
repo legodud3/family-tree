@@ -1,29 +1,40 @@
-# Family Tree
+# Family Atlas
 
-**Your private map of who everyone is.**
+A premium, zero-backend family relationship app for quickly answering:
 
-A zero-maintenance, single-page app to answer the social anxiety question: _"Who is this person I'm about to meet?"_
+> **"How is this person related to me?"**
+
+Built as a heartfelt gift project for a newborn son and future family storytelling.
+
+## Current Status
+
+The app now includes:
+
+- Modern 2026-style UI polish (glassmorphism, gradients, theme toggle)
+- Kinship resolver (human-friendly labels like aunt/uncle, grandparent)
+- Extensible data model with metadata on people + relationships
+- Jest + ESLint + CI checks
 
 ## Quick Start
 
-Visit: https://legodud3.github.io/family-tree/
+1. Clone repo
+2. Install deps: `npm ci`
+3. Run tests: `npm test`
+4. Open `index.html` in browser (or publish to GitHub Pages)
 
-Alt:
+## Data Editing
 
-1.  Clone the repo.
-2.  Open `index.html` in your browser.
-3.  Select a person from the dropdown to see how they connect to you.
+Edit `data.js`:
 
-## Configuration
+- `ME_ID` = you
+- `people[]` = person profiles (`display_name`, `nickname`, `notes`, `tags`, etc.)
+- `relationships[]` = edges (`type`, `subtype`, `since`, `confidence`, etc.)
 
-- **Add People:** Edit `data.js`.
-- **Change "Me":** Update `data.ME_ID` in `data.js`.
+## Docs
 
-## Documentation
-
-- [Product Requirements (PRD)](prd.md) - Architecture & Data Model.
-- [Version History](changelog.md) - What changed in each release.
-- [Roadmap](roadmap.md) - Future plans.
+- [Product Requirements](prd.md)
+- [Roadmap](roadmap.md)
+- [Changelog](changelog.md)
 
 ## License
 

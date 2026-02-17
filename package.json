@@ -1,6 +1,6 @@
 {
   "name": "family-tree",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "**Your private map of who everyone is.**",
   "main": "app.js",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/legodud3/family-tree/issues"
   },

@@ -4,17 +4,21 @@
     <meta charset="UTF-8" />
     <title>Family Tree</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A premium personal family graph to understand kinship and preserve your family story."
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="ambient-bg" aria-hidden="true"></div>
     <div class="container">
       <header class="app-header">
         <div class="brand">
           <div class="brand-icon">👨‍👩‍👧‍👦</div>
-          <!-- or 🌳 or ❤️ -->
           <div class="brand-text">
-            <h1 class="brand-title">Family Tree</h1>
-            <p class="brand-subtitle">Your private family connections</p>
+            <h1 class="brand-title">Family Atlas</h1>
+            <p class="brand-subtitle">Private kinship intelligence for your whole family</p>
           </div>
         </div>
         <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode">
@@ -24,19 +28,22 @@
 
       <main>
         <div class="question-row">
-          <h1 class="question-heading">How is this person related to me?</h1>
+          <h2 class="question-heading">How is this person related to me?</h2>
+          <p class="question-subheading">Select anyone and get an instant kinship answer + visual path.</p>
           <div class="question-control">
+            <label class="visually-hidden" for="target-select">Choose a family member</label>
             <select id="target-select">
               <option value="">Select a person</option>
             </select>
           </div>
         </div>
 
-        <div class="answer" id="answer">
-          <div class="answer-label">Relationship path</div>
-          <div class="answer-path muted">Pick someone to see how they connect to you.</div>
+        <section class="answer" id="answer" aria-live="polite">
+          <div class="answer-label">Relationship</div>
+          <div class="answer-summary muted">Pick someone to see how they connect to you.</div>
+          <div class="answer-path muted"></div>
           <div id="grid" class="grid"></div>
-        </div>
+        </section>
       </main>
     </div>
 
